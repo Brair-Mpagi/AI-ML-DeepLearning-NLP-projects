@@ -1,0 +1,39 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Python Virtual Environments
+backend_env/
+**/backend_env/
+venv/
+.venv/
+env/
+*env/
+
+# Python caching
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Local configuration/secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+*.log
+logs/
+**/logs/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+build/
+dist/
+.next/
+out/

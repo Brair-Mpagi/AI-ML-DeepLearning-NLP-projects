@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MMU Chatbot</string>
+    <string name="title_activity_main">MMU Chatbot</string>
+    <string name="package_name">com.mmu.chatbot</string>
+    <string name="custom_url_scheme">com.mmu.chatbot</string>
+</resources>

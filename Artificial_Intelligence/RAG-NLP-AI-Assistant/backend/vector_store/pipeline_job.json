@@ -1,0 +1,13 @@
+{
+  "job_id": "2f46c7de",
+  "status": "running",
+  "phase": "enrich",
+  "enriched": 0,
+  "failed": 0,
+  "processed": 0,
+  "rounds": 0,
+  "total_pending": 240,
+  "initial_total_pending": 240,
+  "cancel_requested": false,
+  "updated_at": 1779739739.4061644
+}

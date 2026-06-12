@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connection Diagnostic</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .loading {
+            color: #FF9800;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        pre {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Connection Diagnostic Tool</h1>
+        
+        <div class="info">
+            <strong>Current URL:</strong> <span id="currentUrl"></span><br>
+            <strong>Hostname:</strong> <span id="hostname"></span><br>
+            <strong>Expected Backend:</strong> <span id="backendUrl"></span>
+        </div>
+
+        <button onclick="runAllTests()">🚀 Run All Tests</button>
+        <button onclick="location.reload()">🔄 Refresh Page</button>
+        <button onclick="testFromBrowser()">🌐 Test from Browser</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Detect backend URL (same logic as the app)
+        function getBackendURL() {
+            const hostname = window.location.hostname;
+            
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'http://localhost:8000';
+            }
+            
+            if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+                return `http://${hostname}:8000`;
+            }
+            
+            return 'http://localhost:8000';
+        }
+
+        const BACKEND_URL = getBackendURL();
+        
+        // Display current info
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('hostname').textContent = window.location.hostname;
+        document.getElementById('backendUrl').textContent = BACKEND_URL;
+
+        function addResult(title, status, message, details = null) {
+            const results = document.getElementById('results');
+            const test = document.createElement('div');
+            test.className = 'test';
+            
+            let statusClass = status === 'success' ? 'success' : status === 'error' ? 'error' : 'loading';
+            let icon = status === 'success' ? '✅' : status === 'error' ? '❌' : '⏳';
+            
+            let html = `
+                <h3>${icon} ${title}</h3>
+                <p class="${statusClass}">${message}</p>
+            `;
+            
+            if (details) {
+                html += `<pre>${JSON.stringify(details, null, 2)}</pre>`;
+            }
+            
+            test.innerHTML = html;
+            results.appendChild(test);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testBackendRoot() {
+            addResult('Test 1: Backend Root', 'loading', 'Testing backend connection...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    clearLastResult();
+                    addResult('Test 1: Backend Root', 'success', 
+                        `Backend is responding on ${BACKEND_URL}`, data);
+                } else {
+                    clearLastResult();
+                    addResult('Test 1: Backend Root', 'error', 
+                        `Backend returned status ${response.status}`, 
+                        {status: response.status, statusText: response.statusText});
+                }
+            } catch (error) {
+                clearLastResult();
+                addResult('Test 1: Backend Root', 'error', 
+                    `Cannot connect to backend at ${BACKEND_URL}`, 
+                    {error: error.message, name: error.name});
+            }
+        }
+
+        async function testChatAPI() {
+            addResult('Test 2: Chat API', 'loading', 'Testing chat endpoint...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v1/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify({ prompt: 'hello' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    clearLastResult();
+                    addResult('Test 2: Chat API', 'success', 
+                        'Chat API is working!', data);
+                } else {
+                    clearLastResult();
+                    addResult('Test 2: Chat API', 'error', 
+                        `Chat API returned status ${response.status}`, 
+                        {status: response.status, statusText: response.statusText});
+                }
+            } catch (error) {
+                clearLastResult();
+                addResult('Test 2: Chat API', 'error', 
+                    'Chat API request failed', 
+                    {error: error.message, name: error.name, backend: BACKEND_URL});
+            }
+        }
+
+        async function testChatTestEndpoint() {
+            addResult('Test 3: Chat Test Endpoint', 'loading', 'Testing GET endpoint...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v1/chat/test`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    clearLastResult();
+                    addResult('Test 3: Chat Test Endpoint', 'success', 
+                        'Test endpoint is reachable', data);
+                } else {
+                    clearLastResult();
+                    addResult('Test 3: Chat Test Endpoint', 'error', 
+                        `Endpoint returned status ${response.status}`);
+                }
+            } catch (error) {
+                clearLastResult();
+                addResult('Test 3: Chat Test Endpoint', 'error', 
+                    'Test endpoint failed', 
+                    {error: error.message, name: error.name});
+            }
+        }
+
+        function clearLastResult() {
+            const results = document.getElementById('results');
+            if (results.lastChild) {
+                results.removeChild(results.lastChild);
+            }
+        }
+
+        async function testFromBrowser() {
+            clearResults();
+            addResult('Browser Info', 'success', 'Testing from your current browser', {
+                userAgent: navigator.userAgent,
+                currentURL: window.location.href,
+                backendURL: BACKEND_URL,
+                hostname: window.location.hostname
+            });
+        }
+
+        async function runAllTests() {
+            clearResults();
+            addResult('Starting Tests', 'loading', 'Running diagnostic tests...');
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            clearResults();
+            
+            await testBackendRoot();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testChatTestEndpoint();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testChatAPI();
+            
+            addResult('All Tests Complete', 'success', 
+                'Check the results above. If all tests pass, the backend is working correctly.');
+        }
+
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>
